@@ -111,11 +111,6 @@ class Application : public Application_Interface, public Application_Base
 {
 public:
 
-    typedef State_Payload               Payload_type;
-    typedef static_vector<Payload_type> Payload_Vector_t;
-    typedef Expert_Vector<Payload_type> Expert_Vector_t;
-    typedef GMES<Expert_Vector_t>       GMES_t;
-
     Application(int argc, char **argv, Event_Manager &em)
     : Application_Base("GMES Pendulum", 800, 800)
     , settings(argc, argv)
@@ -192,11 +187,11 @@ private:
 
     control::pendulum_sensor_space         sensors;
     control::self_adjusting_motor_space    control;
-    control::pendulum_reward_space<GMES_t> reward;
-    Payload_Vector_t                       payloads;
-    Expert_Vector_t                        experts;
+    control::pendulum_reward_space         reward;
+    static_vector<State_Payload>           payloads;
+    Expert_Vector                          experts;
 
-    GMES_t                                 gmes;
+    GMES                                   gmes;
 
     Epsilon_Greedy                         epsilon_greedy; /**TODO integrate into sarsa, as template parameter, with eps (init) also as template param*/
     Boltzmann_Softmax                      boltzmann_softmax;
@@ -208,9 +203,9 @@ private:
 
     /* graphics */
     control::self_adjusting_motor_space_graphics      control_graphics;
-    GMES_Graphics<Expert_Vector_t>                       gmes_graphics;
+    GMES_Graphics                                        gmes_graphics;
     SARSA_Graphics                                      sarsa_graphics;
-    Payload_Graphics<Expert_Vector_t>                 payload_graphics;
+    Payload_Graphics                                  payload_graphics;
     State_Payload_Graphics                        ext_payload_graphics;
     Policy_Selector_Graphics                  policy_selector_graphics;
     Eigenzeit_Graphics                              eigenzeit_graphics;
