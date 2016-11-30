@@ -44,6 +44,7 @@
 #include <draw/network3D.h>
 
 #include <control/spaces.h>
+#include <control/sensorspace.h>
 #include <control/jointcontrol.h>
 #include <control/controlparameter.h>
 
@@ -55,7 +56,6 @@
 #include <learning/eigenzeit.h>
 #include <learning/payload.h>
 #include <learning/payload_graphics.h>
-#include <learning/sensorspace.h>
 #include <learning/competitive_motor_layer.h>
 #include <learning/competitive_motor_layer_graphics.h>
 #include <learning/action_module.h>
