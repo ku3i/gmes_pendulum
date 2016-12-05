@@ -63,8 +63,6 @@
 #include <learning/epsilon_greedy.h>
 #include <learning/boltzmann_softmax.h>
 
-#include "./setting.h"
-
 /**TODO solve the problem
  * - of falling on back (robots)
  * - spinning around (pendulum)
@@ -113,7 +111,6 @@ public:
 
     Application(int argc, char **argv, Event_Manager &em)
     : Application_Base("GMES Pendulum", 800, 800)
-    , settings(argc, argv)
     , event(em)
     , cycles(0)
     , robot(true)
@@ -151,7 +148,7 @@ public:
         assert(sensors.size() == 3);
 
         /* register key event */
-        Event_Manager::callback_type callback = std::tr1::bind(&Application::user_callback_keyboard, this, std::tr1::placeholders::_1);
+        Event_Manager::callback_type callback = std::bind(&Application::user_callback_keyboard, this, std::placeholders::_1);
         event.register_user_callback_key_pressed(callback);
 
         /**TODO where to place this?*/
@@ -178,7 +175,6 @@ public:
     void     user_callback_keyboard(const SDL_Keysym &keysym);
 
 private:
-    Setting                                settings;
     Event_Manager&                         event;
     uint64_t                               cycles;
 
