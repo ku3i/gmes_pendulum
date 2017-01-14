@@ -53,8 +53,6 @@
 		</Linker>
 		<Unit filename="src/gmes_pendulum.cpp" />
 		<Unit filename="src/gmes_pendulum.h" />
-		<Unit filename="src/setting.cpp" />
-		<Unit filename="src/setting.h" />
 		<Extensions>
 			<envvars />
 			<code_completion />

@@ -128,7 +128,7 @@ public:
              , constants::seed )
     , reward(gmes, robot.get_joints())
     , payloads(constants::number_of_experts, control, reward.get_number_of_policies(), constants::initial_qvalue)
-    , experts(constants::number_of_experts, sensors, payloads, constants::local_learning_rate, constants::experience_size)
+    , experts(constants::number_of_experts, payloads, sensors, constants::local_learning_rate, gmes_constants::random_weight_range, constants::experience_size)
     , gmes(experts, constants::gmes_learning_rate)
     , epsilon_greedy(payloads, control, constants::epsilon_exploration)
     , boltzmann_softmax(payloads, control, constants::epsilon_exploration)
