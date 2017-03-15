@@ -19,9 +19,12 @@ Application::user_callback_keyboard(const SDL_Keysym &keysym)
         case SDLK_2: policy_selector.select_policy(1); break;
         case SDLK_3: policy_selector.select_policy(2); break;
 
+        case SDLK_l: motor_layer.toggle_learning(); break;
         default:
             break;
     }
+
+    views.key_pressed(keysym);
 }
 
 void
@@ -29,13 +32,14 @@ Application::draw(const pref& p) const
 {
     robot.draw(0.0, 0.0, 2.0);
 
-    gmes_graphics           .drawing(p);
-    sarsa_graphics          .drawing(p);
-    control_graphics        .drawing(p);
-    policy_selector_graphics.drawing(p);
-    eigenzeit_graphics      .drawing(p);
-    payload_graphics        .drawing(p);
-    ext_payload_graphics    .drawing(p);
+    gfx_gmes           .drawing(p);
+    gfx_policy_selector.drawing(p);
+    gfx_eigenzeit      .drawing(p);
+    gfx_payload        .drawing(p);
+    if (views.get() == 1) {
+        gfx_agent      .drawing(p);
+        gfx_ext_payload.drawing(p);
+    }
 }
 
 bool
@@ -59,16 +63,13 @@ Application::loop(void)
     instead of randomly choosing a policy to follow:
     duration is now configurable, schedule not yet */
 
-    /**TODO apply action means to choose a new setting for joint controller sarsa should have a reference to the jointcontroller
-    (implementing the action module) */
-
-    /** TODO: integer learning capacity with discrete decrement steps for GMES*/
-
     robot.execute_cycle();
+    controller.execute_cycle();
     sensors.execute_cycle();
+    motor_layer.execute_cycle();
 
     gmes.execute_cycle();
-    gmes_graphics.execute_cycle(cycles);
+    gfx_gmes.execute_cycle(cycles);
 
     eigenzeit.execute_cycle();
 
@@ -76,12 +77,12 @@ Application::loop(void)
     policy_selector.execute_cycle();
 
     if (eigenzeit.has_progressed())
-        sarsa.execute_cycle(gmes.get_winner());
+        agent.execute_cycle(gmes.get_winner());
 
-    sarsa_graphics.execute_cycle(cycles, eigenzeit.has_progressed());
+    gfx_agent.execute_cycle(cycles, eigenzeit.has_progressed());
 
-    control         .execute_cycle(eigenzeit.has_progressed()); //note: must be processed after sarsa.
-    control_graphics.execute_cycle(eigenzeit.has_progressed());
+    if (eigenzeit.has_progressed() /**TODO: and actions.has_current_selection_changed()*/)
+        controller.set_control_parameter(actions.get_controller_weights(agent.get_current_action())); //note: must be processed after sarsa.
 
     if (eigenzeit.has_progressed())
         reward.clear_aggregations();

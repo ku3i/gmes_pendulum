@@ -29,6 +29,7 @@
 #include <common/static_vector.h>
 #include <common/misc.h>
 #include <common/vector_n.h>
+#include <common/view_manager.h>
 
 #include <basic/color.h>
 
@@ -58,10 +59,11 @@
 #include <learning/payload_graphics.h>
 #include <learning/competitive_motor_layer.h>
 #include <learning/competitive_motor_layer_graphics.h>
-#include <learning/action_module.h>
+#include <learning/gmes_action_module.h>
 #include <learning/action_selection.h>
 #include <learning/epsilon_greedy.h>
 #include <learning/boltzmann_softmax.h>
+#include <learning/motor_layer.h>
 
 /**TODO solve the problem
  * - of falling on back (robots)
@@ -74,14 +76,10 @@
  * 'Learning strategy'
  */
 
-/**die metrik nach derer eine action gelöscht werden kann ist schlecht.
-* es führt dazu, dass seltener gewählte aktionen aussterben, obwohl sie wichtig sind.*/
-
-
 namespace constants { /**TODO make these constants experiment settings*/
     /*gmes*/
     const std::size_t number_of_experts       = 225;
-    const std::size_t max_number_of_actions   = 4;
+    const std::size_t max_number_of_actions   = 20;
     const std::size_t number_of_actions_begin = 4;
     const double      gmes_learning_rate      = 35.0; // global learning rate
     const double      local_learning_rate     = 0.005; // 0.005
@@ -114,36 +112,35 @@ public:
     , event(em)
     , cycles(0)
     , robot(true)
-    , parameter_set(constants::max_number_of_actions, "../data/seeds/ctrl_pendulum/")
+    , controller(robot)
     , sensors(robot.get_joints())
-    , control( robot
-             , parameter_set
-             , constants::max_number_of_actions
-             , constants::number_of_actions_begin
-             , payloads
-             , sarsa
-             , constants::self_adjusting
-             , constants::mutation_rate
-             , constants::learning_rate
-             , constants::seed )
+    , motor_layer( robot
+                 , constants::max_number_of_actions/**TODO increase*/
+                 , 0.001 /*learning_rate*/
+                 , 1.0   /*growth rate*/
+                 , 1 /*experience size */
+                 , "../data/seeds/ctrl_pendulum/"
+                 , {0.,0.,0.} /*minimal seed*/
+                 , constants::number_of_actions_begin )
+    , actions(motor_layer)
     , reward(gmes, robot.get_joints())
-    , payloads(constants::number_of_experts, control, reward.get_number_of_policies(), constants::initial_qvalue)
+    , payloads(constants::number_of_experts, actions, reward.get_number_of_policies(), constants::initial_qvalue)
     , experts(constants::number_of_experts, payloads, sensors, constants::local_learning_rate, gmes_constants::random_weight_range, constants::experience_size)
     , gmes(experts, constants::gmes_learning_rate)
-    , epsilon_greedy(payloads, control, constants::epsilon_exploration)
-    , boltzmann_softmax(payloads, control, constants::epsilon_exploration)
-    , sarsa(payloads, reward, epsilon_greedy, control.get_number_of_actions(), constants::sarsa_learning_rates)
-    , policy_selector(sarsa, reward.get_number_of_policies(), true)
+    , epsilon_greedy(payloads, actions, constants::epsilon_exploration)
+    , boltzmann_softmax(payloads, actions, constants::epsilon_exploration)
+    , agent(payloads, reward, epsilon_greedy, actions.get_number_of_actions(), constants::sarsa_learning_rates)
+    , policy_selector(agent, reward.get_number_of_policies(), true)
     , eigenzeit(gmes, constants::eigenzeit_steps)
     , table(3)
     /* graphics */
-    , control_graphics(control)
-    , gmes_graphics(gmes, sensors)
-    , sarsa_graphics(sarsa)
-    , payload_graphics(gmes, gmes_graphics, payloads, sarsa)
-    , ext_payload_graphics(payloads)
-    , policy_selector_graphics(policy_selector)
-    , eigenzeit_graphics(eigenzeit)
+    , gfx_gmes(gmes, sensors)
+    , gfx_agent(agent)
+    , gfx_payload(gmes, gfx_gmes, payloads, agent)
+    , gfx_ext_payload(payloads)
+    , gfx_policy_selector(policy_selector)
+    , gfx_eigenzeit(eigenzeit)
+    , views(2)
     {
         assert(sensors.size() == 3);
 
@@ -157,13 +154,16 @@ public:
             policy_selector.set_policy_trial_duration(i, constants::trial_durations[i]);
 
         /**TODO: positions of the drawings */
-        control_graphics        .set_position(0.0, 0.0).set_scale(1.0);
-        gmes_graphics           .set_position(0.0, 0.0).set_scale(1.0); // done
-        sarsa_graphics          .set_position(0.0, 0.0).set_scale(1.0);
-        payload_graphics        .set_position(0.0, 0.0).set_scale(1.0);
-        ext_payload_graphics    .set_position(0.0,-2.0).set_scale(1.0);
-        policy_selector_graphics.set_position(0.0, 0.0).set_scale(1.0);
-        eigenzeit_graphics      .set_position(0.0, 0.0).set_scale(1.0);
+        gfx_gmes           .set_position(0.0, 0.0).set_scale(1.0); // done
+        gfx_agent          .set_position(0.0, 0.0).set_scale(1.0);
+        gfx_payload        .set_position(0.0, 0.0).set_scale(1.0);
+        gfx_ext_payload    .set_position(0.0,-2.0).set_scale(1.0);
+        gfx_policy_selector.set_position(0.0, 0.0).set_scale(1.0);
+        gfx_eigenzeit      .set_position(0.0, 0.0).set_scale(1.0);
+
+
+        /**TODO: remove */
+        motor_layer.enable_learning(false);
     }
 
     bool loop();
@@ -179,32 +179,34 @@ private:
     uint64_t                               cycles;
 
     robots::pole                           robot;
-    control::Control_Vector                parameter_set;
-
+    control::Jointcontrol                  controller;
     control::pendulum_sensor_space         sensors;
-    control::self_adjusting_motor_space    control;
-    control::pendulum_reward_space         reward;
+
+    learning::Motor_Layer                  motor_layer;
+    learning::gmes_action_module           actions;
+    control::pendulum_reward_space         reward;      //TODO: move to separate file and learning namespace
     static_vector<State_Payload>           payloads;
     Expert_Vector                          experts;
 
     GMES                                   gmes;
 
-    Epsilon_Greedy                         epsilon_greedy; /**TODO integrate into sarsa, as template parameter, with eps (init) also as template param*/
+    learning::Epsilon_Greedy               epsilon_greedy; /**TODO integrate into sarsa, as template parameter, with eps (init) also as template param*/
     Boltzmann_Softmax                      boltzmann_softmax;
-    SARSA                                  sarsa;
+    SARSA                                  agent;
     Policy_Selector                        policy_selector;
 
-    Eigenzeit                              eigenzeit;
+    learning::Eigenzeit                    eigenzeit;
     ColorTable                             table;
 
     /* graphics */
-    control::self_adjusting_motor_space_graphics      control_graphics;
-    GMES_Graphics                                        gmes_graphics;
-    SARSA_Graphics                                      sarsa_graphics;
-    Payload_Graphics                                  payload_graphics;
-    State_Payload_Graphics                        ext_payload_graphics;
-    Policy_Selector_Graphics                  policy_selector_graphics;
-    Eigenzeit_Graphics                              eigenzeit_graphics;
+    GMES_Graphics                          gfx_gmes;
+    SARSA_Graphics                         gfx_agent;
+    Payload_Graphics                       gfx_payload;
+    State_Payload_Graphics                 gfx_ext_payload;
+    Policy_Selector_Graphics               gfx_policy_selector;
+    learning::Eigenzeit_Graphics           gfx_eigenzeit;
+
+    View_Manager                           views;
 };
 
 #endif // MAIN_APP_H_INCLUDED
