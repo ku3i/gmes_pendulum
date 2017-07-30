@@ -1,24 +1,10 @@
-#ifndef MAIN_APP_H_INCLUDED
-#define MAIN_APP_H_INCLUDED
+/*---------------------------------+
+ | Matthias Kubisch                |
+ | kubisch@informatik.hu-berlin.de |
+ | July 2017                       |
+ +---------------------------------*/
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstdarg>
-#include <unistd.h>
-
-#include <ctime>
-#include <cmath>
-#include <cfloat>
-#include <string>
-#include <cerrno>
-#include <clocale>
-#include <sys/time.h>
-#include <signal.h>
-#include <vector>
-#include <cassert>
-#include <functional>
-
-#include <common/application_interface.h>
+#include <common/application_base.h>
 #include <common/event_manager.h>
 #include <common/log_messages.h>
 #include <common/basic.h>
@@ -96,21 +82,19 @@ namespace constants { /**TODO make these constants experiment settings*/
     const double      epsilon_exploration     = 0.05;
     const double      initial_qvalue          = 10.0; /**optimistic initialization, if reward is normalized between 0..1 */
 
-    /*control*/
-    const bool        self_adjusting          = false;
-    const double      mutation_rate           = 0.0001; // 0.001
-    const double      learning_rate           = 0.0010; // 0.01
-    const control::Minimal_Seed_t& seed       = {0.,0.,0.};
+    /* motor control*/
+    //const double      learning_rate           = 0.;
+    //const double      growth_rate             = 0.;
+    //const std::size_t experience_size         = 1;
+    //const control::Minimal_Seed_t& seed       = {0.,0.,0.};
 }
 
-class Application : public Application_Interface, public Application_Base
+class Application : public Application_Base
 {
 public:
 
-    Application(int argc, char **argv, Event_Manager &em)
-    : Application_Base("GMES Pendulum", 800, 800)
-    , event(em)
-    , cycles(0)
+    Application(int /*argc*/, char** /*argv*/, Event_Manager &em)
+    : Application_Base(em, "GMES Pendulum", 800, 800)
     , robot(true)
     , controller(robot)
     , sensors(robot.get_joints())
@@ -144,10 +128,6 @@ public:
     {
         assert(sensors.size() == 3);
 
-        /* register key event */
-        Event_Manager::callback_type callback = std::bind(&Application::user_callback_keyboard, this, std::placeholders::_1);
-        event.register_user_callback_key_pressed(callback);
-
         /**TODO where to place this?*/
         assert(constants::trial_durations.size() == policy_selector.size());
         for (std::size_t i = 0; i < policy_selector.size(); ++i)
@@ -169,15 +149,9 @@ public:
     bool loop();
     void finish();
     void draw(const pref& p) const;
-
-    bool     visuals_enabled(void)       { return true;   }
-    uint64_t get_cycle_count(void) const { return cycles; }
-    void     user_callback_keyboard(const SDL_Keysym &keysym);
+    void user_callback_key_pressed (const SDL_Keysym& keysym);
 
 private:
-    Event_Manager&                         event;
-    uint64_t                               cycles;
-
     robots::pole                           robot;
     control::Jointcontrol                  controller;
     control::pendulum_sensor_space         sensors;
@@ -208,5 +182,3 @@ private:
 
     View_Manager                           views;
 };
-
-#endif // MAIN_APP_H_INCLUDED

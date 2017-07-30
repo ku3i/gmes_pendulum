@@ -9,7 +9,7 @@
 DEFINE_GLOBALS()
 
 void
-Application::user_callback_keyboard(const SDL_Keysym &keysym)
+Application::user_callback_key_pressed(const SDL_Keysym& keysym)
 {
     switch (keysym.sym)
     {
