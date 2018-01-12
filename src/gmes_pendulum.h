@@ -93,8 +93,8 @@ class Application : public Application_Base
 {
 public:
 
-    Application(int /*argc*/, char** /*argv*/, Event_Manager &em)
-    : Application_Base(em, "GMES Pendulum", 800, 800)
+    Application(int argc, char** argv, Event_Manager &em)
+    : Application_Base(argc, argv, em, "GMES Pendulum", 800, 800)
     , robot(true)
     , controller(robot)
     , sensors(robot.get_joints())
