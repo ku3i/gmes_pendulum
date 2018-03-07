@@ -79,7 +79,7 @@ Application::loop(void)
     if (eigenzeit.has_progressed())
         agent.execute_cycle(gmes.get_winner());
 
-    gfx_agent.execute_cycle(cycles, eigenzeit.has_progressed());
+    gfx_agent.execute_cycle(cycles, eigenzeit.has_progressed(), policy_selector.has_trial_ended());
 
     if (eigenzeit.has_progressed() /**TODO: and actions.has_current_selection_changed()*/)
         controller.set_control_parameter(actions.get_controller_weights(agent.get_current_action())); //note: must be processed after sarsa.

@@ -135,7 +135,7 @@ public:
 
         /**TODO: positions of the drawings */
         gfx_gmes           .set_position(0.0, 0.0).set_scale(1.0); // done
-        gfx_agent          .set_position(0.0, 0.0).set_scale(1.0);
+        gfx_agent          .set_position(0.0,-1.0).set_scale(1.0);
         gfx_payload        .set_position(0.0, 0.0).set_scale(1.0);
         gfx_ext_payload    .set_position(0.0,-2.0).set_scale(1.0);
         gfx_policy_selector.set_position(0.0, 0.0).set_scale(1.0);
