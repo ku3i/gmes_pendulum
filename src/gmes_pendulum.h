@@ -121,7 +121,7 @@ public:
     , gfx_gmes(gmes, sensors)
     , gfx_agent(agent)
     , gfx_payload(gmes, gfx_gmes, payloads, agent)
-    , gfx_ext_payload(payloads)
+    , gfx_ext_payload(payloads, actions)
     , gfx_policy_selector(policy_selector)
     , gfx_eigenzeit(eigenzeit)
     , views(2)
