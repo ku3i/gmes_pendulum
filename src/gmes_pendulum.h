@@ -104,7 +104,7 @@ public:
                  , 1.0   /*growth rate*/
                  , 1 /*experience size */
                  , 0.005 /*noise level*/
-                 , "../data/seeds/ctrl_pendulum/"
+                 , "./data/ctrl/"
                  , {0.,0.,0.} /*minimal seed*/
                  , constants::number_of_actions_begin )
     , actions(motor_layer)

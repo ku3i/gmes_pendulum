@@ -1,0 +1,11 @@
+name = "push_left"
+symmetry = "asymmetric"
+propagation = "original"
+
+
+parameter = { 0.00
+              0.00
+              0.00
+            -10.00 }
+
+
