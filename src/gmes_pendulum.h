@@ -103,6 +103,7 @@ public:
                  , 0.001 /*learning_rate*/
                  , 1.0   /*growth rate*/
                  , 1 /*experience size */
+                 , 0.005 /*noise level*/
                  , "../data/seeds/ctrl_pendulum/"
                  , {0.,0.,0.} /*minimal seed*/
                  , constants::number_of_actions_begin )
@@ -110,7 +111,7 @@ public:
     , reward(gmes, robot.get_joints())
     , payloads(constants::number_of_experts, actions, reward.get_number_of_policies(), constants::initial_qvalue)
     , experts(constants::number_of_experts, payloads, sensors, constants::local_learning_rate, gmes_constants::random_weight_range, constants::experience_size)
-    , gmes(experts, constants::gmes_learning_rate)
+    , gmes(experts, constants::gmes_learning_rate, /*oneshot=*/true, /*initial_experts=*/1, "state")
     , epsilon_greedy(payloads, actions, constants::epsilon_exploration)
     , boltzmann_softmax(payloads, actions, constants::epsilon_exploration)
     , agent(payloads, reward, epsilon_greedy, actions.get_number_of_actions(), constants::sarsa_learning_rates)
@@ -135,7 +136,7 @@ public:
 
         /**TODO: positions of the drawings */
         gfx_gmes           .set_position(0.0, 0.0).set_scale(1.0); // done
-        gfx_agent          .set_position(0.0,-1.0).set_scale(1.0);
+        gfx_agent          .set_position(0.0, 0.0).set_scale(1.0);
         gfx_payload        .set_position(0.0, 0.0).set_scale(1.0);
         gfx_ext_payload    .set_position(0.0,-2.0).set_scale(1.0);
         gfx_policy_selector.set_position(0.0, 0.0).set_scale(1.0);
